@@ -1,0 +1,4 @@
+- parallize code 
+- add Anti Aliasing 
+- add ArcBall Camera 
+- Raytracying with Cubes and other Meshes
