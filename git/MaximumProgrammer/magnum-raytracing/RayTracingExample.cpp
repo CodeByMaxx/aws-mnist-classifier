@@ -177,12 +177,22 @@ void RayTracingExample::keyPressEvent(KeyEvent& event) {
             _rayTracer->clearBuffers();
             break;
 
+        case Key::S:
+          _rayTracer->setSaveBuffers(true);
+          Debug{} << "Save Buffer";
+          break;
+
+        case Key::W:
+          _rayTracer->setSaveBuffers(false);
+          Debug{} << "Not save buffer";
+          break;
+
         case Key::Space:
-            _paused ^= true;
-            break;
+          _paused ^= true;
+          break;
 
         default:
-            return;
+          return;
     }
 
     event.setAccepted(true);

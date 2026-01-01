@@ -29,14 +29,19 @@
     CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <ctime>
+#include "RayTracer.h"
+
 #include <Magnum/Math/Packing.h>
 #include <Magnum/Math/Vector4.h>
 
-#include "RayTracer.h"
+#include <ctime>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
 #include "Camera.h"
-#include "Objects.h"
 #include "Materials.h"
+#include "Objects.h"
 
 namespace Magnum { namespace Examples {
 
@@ -135,16 +140,58 @@ void RayTracer::clearBuffers() {
     _numRenderPass = 0;
 }
 
-void RayTracer::renderBlock() {
-    if(_numRenderPass >= _maxSamplesPerPixel) return;
+std::stringstream getBufferasString(const auto& other)
+{
+  std::stringstream outputStream;
 
-    /* Wait if there's any buffer is currently resized */
-    while(_busy.load()) {}
-    _busy.store(true);
+  const size_t image_width = other.imageSize().x();
+  const size_t image_heigth = other.imageSize().y();
 
-    /* Render the current block */
-    Vector2i blockStart = _currentBlock*_blockSize;
-    loopBlock(_blockSize, blockStart, _imageSize, [&](Int x, Int y) {
+  // std::cout << image_width << " " << image_heigth << std::endl;
+  // std::cout << other.renderedBuffer().size() << std::endl;
+
+  outputStream << "P3" << "\n"
+               << image_width << " " << image_heigth << "\n"
+               << 255 << "\n";
+
+  // size_t size = image_width * image_heigth * 3;
+
+  /*const char* char_ptr =
+      reinterpret_cast<const char*>(other.renderedBuffer().data());
+  outputStream.write(char_ptr, size);
+  */
+  for (size_t j = 0; j < image_heigth; j++) {
+    for (size_t i = 0; i < image_width; i++) {
+      const auto idx = j * image_width + i;
+      const auto val = other.renderedBuffer().data()[idx];
+      outputStream << int(val.x()) << " " << int(val.y()) << " " << int(val.z())
+                   << "\n";
+    }
+  }
+  return outputStream;
+}
+
+void RayTracer::saveBuffers()
+{
+  std::ofstream outFile;
+  outFile.open("screen" + std::to_string(_numRenderPass) + ".ppm");
+  std::stringstream stream = getBufferasString(*this);
+  outFile << stream.rdbuf();
+}
+
+void RayTracer::renderBlock()
+{
+  if (_numRenderPass >= _maxSamplesPerPixel) return;
+
+  /* Wait if there's any buffer is currently resized */
+  while (_busy.load()) {
+  }
+  _busy.store(true);
+
+  /* Render the current block */
+  Vector2i blockStart = _currentBlock * _blockSize;
+  loopBlock(
+      _blockSize, blockStart, _imageSize, [&](Int x, Int y) {
         const Float u = (x + Rnd::rand01())/Float(_imageSize.x());
         const Float v = (y + Rnd::rand01())/Float(_imageSize.y());
         const Ray r = _camera->ray(u, v);
@@ -159,26 +206,27 @@ void RayTracer::renderBlock() {
             Math::pack<Color3ub>(Math::sqrt(pixelColor.rgb()/pixelColor.a())),
             UnsignedByte(255)
         };
-    });
+      });
 
-    /* Mark out the next block to display */
-    _currentBlock = nextBlock(_currentBlock);
-    if(_markNextBlock && _numRenderPass < _maxSamplesPerPixel) {
-        blockStart = _currentBlock*_blockSize;
-        loopBlock(_blockSize, blockStart, _imageSize, [&](Int x, Int y) {
-            const Int pixelIdx = y*_imageSize.x() + x;
-            _pixels[pixelIdx] = {100u, 100u, 255u, 255u};
-        });
+  /* Mark out the next block to display */
+  _currentBlock = nextBlock(_currentBlock);
+  if (_markNextBlock && _numRenderPass < _maxSamplesPerPixel) {
+    blockStart = _currentBlock * _blockSize;
+    loopBlock(_blockSize, blockStart, _imageSize, [&](Int x, Int y) {
+      const Int pixelIdx = y * _imageSize.x() + x;
+      _pixels[pixelIdx] = {100u, 100u, 255u, 255u};
+    });
+  }
+
+  _busy.store(false);
     }
 
-    _busy.store(false);
-}
+    Vector2i RayTracer::nextBlock(const Vector2i& currentBlock)
+    {
+      Vector2i nextBlock = currentBlock;
+      nextBlock.x() += _blockMovingDir;
 
-Vector2i RayTracer::nextBlock(const Vector2i& currentBlock) {
-    Vector2i nextBlock = currentBlock;
-    nextBlock.x() += _blockMovingDir;
-
-    if(nextBlock.x() == _numBlocks.x() || nextBlock.x() == -1) {
+      if (nextBlock.x() == _numBlocks.x() || nextBlock.x() == -1) {
         nextBlock.x() = Math::clamp(nextBlock.x(), 0, _numBlocks.x() - 1);
         nextBlock.y() = currentBlock.y() - 1;
         _blockMovingDir = -_blockMovingDir;
@@ -191,6 +239,9 @@ Vector2i RayTracer::nextBlock(const Vector2i& currentBlock) {
         ++_numRenderPass;
     }
 
+    if (_saveBuffer && nextBlock.x() == 0 && nextBlock.y() == 0) {
+      saveBuffers();
+    }
     return nextBlock;
 }
 
@@ -251,5 +302,5 @@ void RayTracer::generateSceneObjects() {
             0.5f*(1.0f + Rnd::rand01()),
             0.5f*(1.0f + Rnd::rand01())}, 0.0f)));
 }
-
-}}
+  }
+}

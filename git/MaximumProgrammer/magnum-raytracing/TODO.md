@@ -1,3 +1,4 @@
+- https://raytracing.github.io/books/RayTracingInOneWeekend.html#metal/modelinglightscatterandreflectance
 - parallize code 
 - add Anti Aliasing 
 - add ArcBall Camera 

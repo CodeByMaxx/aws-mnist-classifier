@@ -85,14 +85,20 @@ class RayTracer {
         /* Clear the render buffer data */
         void clearBuffers();
 
-        /* Generate scene. Will produce a new, different scene if
+       /* Generate scene. Will produce a new, different scene if
            ConsistentScene is false. */
         void generateSceneObjects();
 
-        /* Get the rendered image. This should be called after renderBlock() in
-           every drawEvent() */
-        Containers::ArrayView<const Color4ub> renderedBuffer() const {
-            return _pixels;
+        /* Save the render buffer data */
+        void inline setSaveBuffers(bool save) { _saveBuffer = save; };
+
+        auto inline imageSize() const { return _imageSize; };
+
+        /* Get the rendered image. This should be called after renderBlock()
+           in every drawEvent() */
+        Containers::ArrayView<const Color4ub> renderedBuffer() const
+        {
+          return _pixels;
         }
 
     private:
@@ -112,9 +118,12 @@ class RayTracer {
         UnsignedInt _blockSize, _maxSamplesPerPixel, _maxRayDepth;
 
         bool _markNextBlock = true;
+        bool _saveBuffer = false;
         std::atomic<bool> _busy{false};
-};
 
+        /* Save the render buffer data */
+        void saveBuffers();
+};
 }}
 
 #endif
