@@ -1,10 +1,12 @@
 # AWS MNIST Classifier
 
-A small end-to-end machine learning project for classifying handwritten digits from the **MNIST dataset**.
+A small end-to-end **machine learning project** for classifying handwritten digits from the **MNIST dataset**.
 
 The project combines **TensorFlow/Keras**, local model training, **Amazon S3** model storage, and optional **AWS EC2 GPU** training.
 
-The main goal is to demonstrate how a trained ML model can be moved from a local development environment into a simple cloud-based workflow.
+The main goal is to demonstrate how a trained machine learning model can be moved from a local development environment into a simple cloud-based workflow.
+
+---
 
 ## Architecture
 
@@ -20,7 +22,7 @@ The main goal is to demonstrate how a trained ML model can be moved from a local
                  └─────────┬──────────┘
                            │
                            ▼
-                  mnist_model.keras
+                    mnist_model.keras
                            │
                            ▼
                  ┌────────────────────┐
@@ -40,17 +42,21 @@ The main goal is to demonstrate how a trained ML model can be moved from a local
                  └────────────────────┘
 ```
 
+---
+
 ## Technology Stack
 
-| Component        | Technology                   |
-| ---------------- | ---------------------------- |
-| Language         | Python                       |
-| Machine Learning | TensorFlow / Keras           |
-| Dataset          | MNIST                        |
-| Cloud Storage    | Amazon S3                    |
-| Cloud Compute    | Amazon EC2                   |
-| GPU Support      | NVIDIA CUDA / TensorFlow GPU |
-| CLI              | AWS CLI                      |
+| Technology             | Purpose                                 |
+| ---------------------- | --------------------------------------- |
+| **Python**             | Application and training logic          |
+| **TensorFlow / Keras** | Machine learning and model training     |
+| **MNIST**              | Handwritten digit dataset               |
+| **Amazon S3**          | Model storage                           |
+| **Amazon EC2**         | Cloud compute and optional GPU training |
+| **NVIDIA CUDA**        | GPU acceleration                        |
+| **AWS CLI**            | AWS resource management                 |
+
+---
 
 ## Project Structure
 
@@ -63,19 +69,15 @@ aws-mnist-classifier/
 │   ├── train.py
 │   └── ...
 │
-├── models/
-│   └── ...
-│
-├── data/
-│   └── ...
-│
 ├── requirements.txt
 ├── start_training.py
 ├── upload_data.py
 └── README.MD
 ```
 
-The main components are separated into training, data, and model handling.
+The project separates the training workflow from the model storage and inference workflow.
+
+---
 
 ## Workflow
 
@@ -125,6 +127,8 @@ mnist-model-bucket/
 
 The application downloads the configured model from S3 and uses it for digit classification.
 
+---
+
 ## Requirements
 
 For local development:
@@ -141,6 +145,8 @@ Install the Python dependencies:
 pip install -r requirements.txt
 ```
 
+---
+
 ## AWS Configuration
 
 The project uses Amazon S3 to store the trained model.
@@ -149,7 +155,7 @@ The application requires access to the configured S3 bucket.
 
 ### IAM Permissions
 
-The IAM identity used by the application needs only the permissions required by the workflow.
+The IAM identity used by the application should only have the permissions required by the workflow.
 
 For downloading the model:
 
@@ -165,6 +171,8 @@ s3:PutObject
 ```
 
 For production deployments, prefer an IAM role or another short-lived credential mechanism over long-lived access keys.
+
+---
 
 ## AWS CLI
 
@@ -189,20 +197,22 @@ Example region:
 eu-central-1
 ```
 
-Never commit AWS credentials to the repository.
+**Never commit AWS credentials to the repository.**
+
+---
 
 ## S3 Bucket
 
 Create an S3 bucket with a globally unique name.
 
-For example:
+Example:
 
 ```text
 mnist-model-bucket/
 └── mnist_model.keras
 ```
 
-The application can then be configured to use the bucket:
+Configure the application with the bucket and model name:
 
 ```python
 BUCKET_NAME = "your-bucket-name"
@@ -210,6 +220,8 @@ MODEL_FILE = "mnist_model.keras"
 ```
 
 Keep bucket names and other environment-specific configuration separate from credentials.
+
+---
 
 ## Local Training
 
@@ -226,6 +238,8 @@ The resulting model can then be uploaded:
 ```bash
 python training/upload_data.py
 ```
+
+---
 
 ## AWS GPU Training
 
@@ -246,7 +260,7 @@ GPU-based Training
    Model File
        │
        ▼
-    Amazon S3
+   Amazon S3
 ```
 
 Example GPU-capable EC2 instance types include:
@@ -269,13 +283,15 @@ Check GPU availability:
 nvidia-smi
 ```
 
-TensorFlow can also be checked with:
+TensorFlow GPU support can also be checked with:
 
 ```python
 import tensorflow as tf
 
 print(tf.config.list_physical_devices("GPU"))
 ```
+
+---
 
 ## Running the Application
 
@@ -286,6 +302,8 @@ python main.py
 ```
 
 The application downloads the trained model and performs digit classification.
+
+---
 
 ## Machine Learning Workflow
 
@@ -315,6 +333,8 @@ Inference
 
 This separation allows the model artifact to be stored independently from the application that performs inference.
 
+---
+
 ## Cloud Architecture
 
 The project demonstrates a simple separation between compute and model storage:
@@ -343,6 +363,8 @@ The project demonstrates a simple separation between compute and model storage:
 └─────────────────┘
 ```
 
+---
+
 ## Security Considerations
 
 AWS credentials must never be stored directly in source code or committed to Git.
@@ -361,6 +383,8 @@ For AWS-hosted workloads, IAM roles are preferable to embedding credentials in t
 
 S3 permissions should also follow the principle of least privilege.
 
+---
+
 ## What This Project Demonstrates
 
 This project provides a compact example of:
@@ -375,33 +399,39 @@ This project provides a compact example of:
 * Local/cloud ML workflows
 * Separation of training and inference
 
+---
+
 ## Possible Extensions
 
 Potential improvements include:
 
-* FastAPI inference service
-* Dockerized inference
-* Automated model deployment
-* Model versioning
-* ML experiment tracking
-* Automated evaluation
-* CI/CD
-* Infrastructure as Code
-* AWS Lambda inference
-* AWS SageMaker deployment
-* CloudWatch monitoring
-* Automated retraining
-* S3 versioning
+* [ ] FastAPI inference service
+* [ ] Dockerized inference
+* [ ] Automated model deployment
+* [ ] Model versioning
+* [ ] ML experiment tracking
+* [ ] Automated evaluation
+* [ ] CI/CD
+* [ ] Infrastructure as Code
+* [ ] AWS Lambda inference
+* [ ] AWS SageMaker deployment
+* [ ] CloudWatch monitoring
+* [ ] Automated retraining
+* [ ] S3 versioning
+
+---
 
 ## Project Status
 
-The core workflow is:
+The current core workflow is:
 
 ```text
 Training → S3 → Model Download → Classification
 ```
 
-The project is intended as a compact demonstration of integrating a machine-learning model with AWS services while keeping local development possible.
+The project is intended as a compact demonstration of integrating a machine learning model with AWS services while keeping local development possible.
+
+---
 
 ## License
 
