@@ -1,32 +1,21 @@
 # AWS MNIST Classifier
 
-A PyTorch-based MNIST image classification project designed to run locally and in an AWS SageMaker-style training environment.
+A PyTorch-based MNIST image classifier designed for local training and AWS SageMaker-compatible workflows.
 
-The project focuses on training a neural network to classify handwritten digits from the **MNIST dataset**, with support for CUDA when a GPU is available.
+The project demonstrates a simple deep learning training pipeline using PyTorch and Torchvision, with support for CPU and CUDA-enabled GPU environments.
 
-## ✨ Features
+## Features
 
-* MNIST digit classification with PyTorch
-* GPU acceleration through CUDA when available
-* CPU fallback for local development
-* SageMaker-compatible training paths
-* Automatic MNIST dataset download
+* MNIST dataset training with PyTorch
+* Torchvision-based data loading
+* Automatic CPU / CUDA device selection
 * Configurable number of training epochs
+* SageMaker-compatible training paths
 * Model artifact export as `model.pth`
-* Separate training entry points for local/SageMaker workflows
+* Local training support
+* Simple structure suitable for experimenting with AWS machine learning workflows
 
-## 🛠️ Technology Stack
-
-* **Python**
-* **PyTorch**
-* **Torchvision**
-* **MNIST**
-* **CUDA** when available
-* **AWS SageMaker** training conventions
-
-## 🧠 Machine Learning Workflow
-
-The basic workflow is:
+## Machine Learning Workflow
 
 ```text
 MNIST Dataset
@@ -41,176 +30,175 @@ PyTorch Model
 Training
      │
      ▼
-Model Evaluation
+Model Artifact
      │
      ▼
 model.pth
 ```
 
-## 📂 Project Structure
+## Technology Stack
+
+* **Python**
+* **PyTorch**
+* **Torchvision**
+* **MNIST**
+* **CUDA** (when available)
+* **AWS SageMaker** compatibility
+
+## Project Structure
 
 ```text
 aws-mnist-classifier/
 ├── training/
 │   └── train.py
+├── README.MD
 ├── start_training.py
-├── upload_data.py
-└── README.md
+└── upload_data.py
 ```
 
-The repository currently contains the training implementation and AWS-oriented training scripts. Additional application or inference components are not assumed to be part of the current project.
+### `start_training.py`
 
-## 🚀 Training
+Local training entry point.
 
-The main training script can be started with:
+It:
 
-```bash
-python start_training.py
+* loads the MNIST dataset
+* selects CUDA when available
+* falls back to CPU otherwise
+* trains the PyTorch model
+* saves the trained model to:
+
+```text
+/opt/ml/model/model.pth
 ```
 
-The number of epochs can be configured through the command-line interface:
+### `training/train.py`
 
-```bash
-python start_training.py --epochs 10
-```
+SageMaker-oriented training script.
 
-The training code automatically uses CUDA when it is available and otherwise falls back to CPU execution.
-
-## 🖥️ Local Training
-
-For local development, PyTorch selects the available compute device.
-
-Conceptually:
-
-```python
-device = torch.device(
-    "cuda" if torch.cuda.is_available() else "cpu"
-)
-```
-
-This allows the same training code to run on a machine with an NVIDIA GPU as well as on a CPU-only development environment.
-
-## ☁️ AWS / SageMaker
-
-The `training/train.py` implementation follows the directory conventions commonly used by Amazon SageMaker training jobs.
-
-Training data is expected in the SageMaker input directory:
+The script expects training data under:
 
 ```text
 /opt/ml/input/data/train
 ```
 
-The trained model is written to:
+and writes the trained model to:
 
 ```text
 /opt/ml/model/model.pth
 ```
 
-This structure allows the training script to be adapted for execution inside a SageMaker training container.
+### `upload_data.py`
 
-## 💾 Model Output
+Reserved for the data-upload workflow. The current file does not contain an implemented upload pipeline.
 
-After training, the model is saved as:
+## Local Training
 
-```text
-model.pth
+Install the required Python packages for your environment, including PyTorch and Torchvision.
+
+Start training with:
+
+```bash
+python start_training.py
 ```
 
-In the SageMaker-oriented workflow, the model artifact is written below:
-
-```text
-/opt/ml/model/model.pth
-```
-
-The model artifact can subsequently be used as the input for an inference workflow.
-
-## 📊 Results
-
-The current repository focuses on the training implementation.
-
-No separate committed result visualization is assumed here. When evaluation screenshots, accuracy plots, confusion matrices, or prediction examples are added to the repository, they should be displayed in this section so that the README shows the actual ML result.
-
-For example:
-
-```text
-Training
-   │
-   ▼
-Evaluation
-   │
-   ├── Accuracy
-   ├── Loss
-   └── Example Predictions
-```
-
-## 🔧 Configuration
-
-The training workflow supports configuring the number of epochs:
+The number of epochs can be configured:
 
 ```bash
 python start_training.py --epochs 10
 ```
 
-The training environment determines whether CPU or CUDA execution is used.
+The default device selection uses CUDA when it is available:
 
-## 📦 Dependencies
+```text
+CUDA → GPU
+CPU  → CPU fallback
+```
 
-The current repository does not contain a root-level `requirements.txt`.
+## AWS SageMaker
 
-The project therefore relies on the Python environment providing the required PyTorch and Torchvision dependencies.
+The training code follows the directory conventions commonly used by SageMaker training jobs.
 
-For a reproducible setup, a future improvement would be to add a dependency definition such as:
+Training input:
+
+```text
+/opt/ml/input/data/train
+```
+
+Model output:
+
+```text
+/opt/ml/model/model.pth
+```
+
+This makes the training code suitable as a basis for running the classifier inside a SageMaker training environment.
+
+## Model Artifact
+
+After training, the model is stored as:
+
+```text
+model.pth
+```
+
+The artifact can subsequently be used as the input for an inference workflow.
+
+## Results
+
+This repository focuses on the training implementation. If training metrics, predictions, confusion matrices, or screenshots are added to the repository, they can be presented here as the visual results of the classifier.
+
+Example:
+
+```markdown
+![MNIST Classification Results](path/to/result.png)
+```
+
+## Dependencies
+
+The repository currently does not contain a root-level `requirements.txt`.
+
+For a reproducible project setup, the dependencies used by the training scripts should eventually be documented in a dedicated dependency file such as:
 
 ```text
 requirements.txt
 ```
 
-or preferably:
+or:
 
 ```text
 pyproject.toml
 ```
 
-with pinned or constrained versions.
+## Possible Improvements
 
-## 🧪 Development Notes
+The current project provides the basic training workflow. Possible extensions include:
 
-The repository currently contains two training-oriented entry points:
-
-* `start_training.py`
-* `training/train.py`
-
-`start_training.py` provides the convenient top-level training entry point, while `training/train.py` follows the directory conventions expected by a SageMaker-style training environment.
-
-Keeping these responsibilities clearly separated is useful when the project is executed both locally and in AWS.
-
-## 🔮 Possible Improvements
-
-Potential next steps include:
-
-* Add a dedicated evaluation script
-* Report test accuracy and loss
+* Add a dedicated evaluation step
+* Calculate accuracy and other classification metrics
 * Add a confusion matrix
-* Add example predictions
-* Add an inference script
-* Add reproducible dependency management
-* Add automated tests
-* Add an AWS SageMaker training configuration
-* Upload datasets through a dedicated S3 workflow
-* Add a deployment/inference endpoint
+* Add an inference script for individual MNIST images
+* Store training metrics
+* Add reproducible dependency versions
+* Complete the data-upload workflow
+* Add a complete SageMaker training configuration
 
-## 🎯 Project Purpose
+## Project Purpose
 
-This project demonstrates the basic workflow of taking a classical computer-vision dataset, training a PyTorch model, producing a model artifact, and structuring the training code so that it can be adapted to an AWS SageMaker environment.
+The project is intended as a compact example of a PyTorch image-classification workflow that can be used locally and adapted for AWS SageMaker.
 
-The focus is on the **ML training workflow and AWS-oriented structure**, rather than on providing a complete production inference service.
+It demonstrates the connection between:
 
-## 📄 License
+* dataset handling
+* PyTorch model training
+* GPU acceleration
+* model artifact creation
+* cloud-oriented training paths
 
-No license file is assumed here unless one is present in the repository. If the project is intended for reuse, an explicit license can be added.
+## Author
 
----
+**Markus**
 
-**Project:** AWS MNIST Classifier
-**Author:** Markus
+## License
+
+No license is documented in this README.
 
