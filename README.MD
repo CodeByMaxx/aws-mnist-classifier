@@ -1,62 +1,28 @@
 # AWS MNIST Classifier
 
-A small end-to-end **machine learning project** for classifying handwritten digits from the **MNIST dataset**.
+A machine learning project for classifying handwritten digits from the **MNIST dataset** using **PyTorch**.
 
-The project combines **TensorFlow/Keras**, local model training, **Amazon S3** model storage, and optional **AWS EC2 GPU** training.
+The project demonstrates model training locally or in an AWS environment and includes scripts for preparing the training workflow and storing the resulting model artifact.
 
-The main goal is to demonstrate how a trained machine learning model can be moved from a local development environment into a simple cloud-based workflow.
+## Features
 
----
-
-## Architecture
-
-```text
-                 ┌────────────────────┐
-                 │    MNIST Dataset   │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │   Model Training   │
-                 │  TensorFlow/Keras  │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                    mnist_model.keras
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │     Amazon S3      │
-                 │   Model Storage    │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │    Application     │
-                 │  Model Download    │
-                 └─────────┬──────────┘
-                           │
-                           ▼
-                 ┌────────────────────┐
-                 │ Digit Classification│
-                 └────────────────────┘
-```
-
----
+* 🧠 MNIST handwritten digit classification
+* 🔥 PyTorch-based convolutional neural network (CNN)
+* 🖥️ CPU and CUDA/GPU support
+* ☁️ AWS/SageMaker-oriented training workflow
+* 💾 PyTorch model export as `model.pth`
+* ⚙️ Configurable number of training epochs in the training entry point
 
 ## Technology Stack
 
-| Technology             | Purpose                                 |
-| ---------------------- | --------------------------------------- |
-| **Python**             | Application and training logic          |
-| **TensorFlow / Keras** | Machine learning and model training     |
-| **MNIST**              | Handwritten digit dataset               |
-| **Amazon S3**          | Model storage                           |
-| **Amazon EC2**         | Cloud compute and optional GPU training |
-| **NVIDIA CUDA**        | GPU acceleration                        |
-| **AWS CLI**            | AWS resource management                 |
-
----
+| Technology      | Purpose                                 |
+| --------------- | --------------------------------------- |
+| **Python**      | Application and training logic          |
+| **PyTorch**     | Neural network and model training       |
+| **Torchvision** | MNIST dataset and image transformations |
+| **CUDA**        | Optional GPU acceleration               |
+| **AWS**         | Cloud-based ML environment              |
+| **SageMaker**   | Training environment integration        |
 
 ## Project Structure
 
@@ -64,374 +30,211 @@ The main goal is to demonstrate how a trained machine learning model can be move
 aws-mnist-classifier/
 │
 ├── training/
-│   ├── start_training.py
-│   ├── upload_data.py
-│   ├── train.py
-│   └── ...
+│   └── train.py
 │
-├── requirements.txt
 ├── start_training.py
 ├── upload_data.py
 └── README.MD
 ```
 
-The project separates the training workflow from the model storage and inference workflow.
+The repository separates the training code from the top-level scripts used to start the training workflow and handle data/model uploads.
 
----
+## Model Architecture
 
-## Workflow
-
-The project follows four main steps:
+The classifier uses a convolutional neural network with:
 
 ```text
-1. Prepare MNIST data
+Input: MNIST image
         │
         ▼
-2. Train the model
+Conv2D (1 → 16)
+        │
+      ReLU
+        │
+   MaxPooling
         │
         ▼
-3. Upload model to S3
+Conv2D (16 → 32)
+        │
+      ReLU
+        │
+   MaxPooling
         │
         ▼
-4. Download model and classify digits
+      Flatten
+        │
+        ▼
+   Linear Layer
+     1568 → 128
+        │
+      ReLU
+        │
+        ▼
+   Linear Layer
+     128 → 10
+        │
+        ▼
+   Digit 0–9
 ```
 
-### 1. Training
+The final layer contains ten outputs corresponding to the ten MNIST digit classes (`0`–`9`).
 
-Start model training with:
+## Training
+
+The training implementation uses:
+
+* PyTorch
+* `torchvision.datasets.MNIST`
+* `DataLoader`
+* Adam optimization
+* Cross-entropy loss
+* CUDA when available
+
+The model is trained for five epochs in the SageMaker-oriented training implementation.
+
+### Training locally
+
+The repository contains a top-level training entry point:
 
 ```bash
-python training/start_training.py
+python start_training.py
 ```
 
-The resulting model is stored locally before being uploaded to Amazon S3.
+The training script automatically selects CUDA when an NVIDIA GPU is available and otherwise falls back to the CPU.
 
-### 2. Upload
-
-Upload the required model/data files:
+You can also configure the number of epochs through the script's command-line argument:
 
 ```bash
-python training/upload_data.py
+python start_training.py --epochs 10
 ```
 
-### 3. Model Storage
+## Output Model
 
-The trained model can be stored in an S3 bucket:
+The training workflow saves the trained PyTorch model as:
 
 ```text
-mnist-model-bucket/
-└── mnist_model.keras
+model.pth
 ```
 
-### 4. Inference
+For the SageMaker training workflow, the model is written to:
 
-The application downloads the configured model from S3 and uses it for digit classification.
+```text
+/opt/ml/model/model.pth
+```
 
----
+This allows the resulting model artifact to be consumed by an AWS-managed training workflow.
 
 ## Requirements
 
-For local development:
+The project requires Python and the PyTorch ecosystem.
 
-* Python 3.x
-* TensorFlow
-* AWS CLI
-* AWS account
-* Amazon S3 bucket
-
-Install the Python dependencies:
+Install the dependencies according to the project's dependency configuration:
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-## AWS Configuration
-
-The project uses Amazon S3 to store the trained model.
-
-The application requires access to the configured S3 bucket.
-
-### IAM Permissions
-
-The IAM identity used by the application should only have the permissions required by the workflow.
-
-For downloading the model:
+The training code uses:
 
 ```text
-s3:GetObject
-s3:ListBucket
+torch
+torchvision
 ```
 
-If the application uploads files:
+For GPU training, a compatible NVIDIA driver and CUDA-enabled PyTorch installation are required.
+
+## AWS / SageMaker
+
+The training code contains paths used by AWS SageMaker training jobs, including:
 
 ```text
-s3:PutObject
+/opt/ml/input/data/train
+/opt/ml/model
 ```
 
-For production deployments, prefer an IAM role or another short-lived credential mechanism over long-lived access keys.
-
----
-
-## AWS CLI
-
-Install the AWS CLI and configure the local environment:
-
-```bash
-aws configure
-```
-
-Provide:
-
-```text
-AWS Access Key ID
-AWS Secret Access Key
-Default Region
-Output format
-```
-
-Example region:
-
-```text
-eu-central-1
-```
-
-**Never commit AWS credentials to the repository.**
-
----
-
-## S3 Bucket
-
-Create an S3 bucket with a globally unique name.
-
-Example:
-
-```text
-mnist-model-bucket/
-└── mnist_model.keras
-```
-
-Configure the application with the bucket and model name:
-
-```python
-BUCKET_NAME = "your-bucket-name"
-MODEL_FILE = "mnist_model.keras"
-```
-
-Keep bucket names and other environment-specific configuration separate from credentials.
-
----
-
-## Local Training
-
-Run:
-
-```bash
-python training/start_training.py
-```
-
-The training process creates the model artifact locally.
-
-The resulting model can then be uploaded:
-
-```bash
-python training/upload_data.py
-```
-
----
-
-## AWS GPU Training
-
-The project can also be used with an AWS EC2 GPU instance.
+The training script can therefore be used as part of a SageMaker training workflow.
 
 A typical workflow is:
 
 ```text
-Local Development
-       │
-       ▼
-    AWS EC2
-       │
-       ▼
-GPU-based Training
-       │
-       ▼
-   Model File
-       │
-       ▼
-   Amazon S3
+MNIST Dataset
+      │
+      ▼
+Training
+      │
+      ▼
+PyTorch CNN
+      │
+      ▼
+model.pth
+      │
+      ▼
+AWS / SageMaker
 ```
 
-Example GPU-capable EC2 instance types include:
+## GPU Support
 
-* `g4dn.xlarge`
-* `g5.xlarge`
-* `p3.2xlarge`
+The training code automatically detects whether CUDA is available:
 
-Availability and pricing depend on the selected AWS region and account.
-
-Connect to an EC2 instance through SSH:
-
-```bash
-ssh -i your-key.pem ubuntu@<EC2-PUBLIC-IP>
+```python
+device = torch.device(
+    "cuda" if torch.cuda.is_available()
+    else "cpu"
+)
 ```
 
-Check GPU availability:
+This means the same training code can run on a CPU or use an available CUDA-capable GPU.
+
+You can verify GPU availability with:
 
 ```bash
 nvidia-smi
 ```
-
-TensorFlow GPU support can also be checked with:
-
-```python
-import tensorflow as tf
-
-print(tf.config.list_physical_devices("GPU"))
-```
-
----
-
-## Running the Application
-
-After the model has been uploaded to S3 and the application is configured, run:
-
-```bash
-python main.py
-```
-
-The application downloads the trained model and performs digit classification.
-
----
-
-## Machine Learning Workflow
-
-The complete ML lifecycle can be summarized as:
-
-```text
-MNIST
-  │
-  ▼
-Training
-  │
-  ▼
-Evaluation
-  │
-  ▼
-Keras Model
-  │
-  ▼
-S3
-  │
-  ▼
-Model Download
-  │
-  ▼
-Inference
-```
-
-This separation allows the model artifact to be stored independently from the application that performs inference.
-
----
-
-## Cloud Architecture
-
-The project demonstrates a simple separation between compute and model storage:
-
-```text
-┌─────────────────┐
-│  EC2 / Local    │
-│                 │
-│ Model Training  │
-└────────┬────────┘
-         │
-         │ upload
-         ▼
-┌─────────────────┐
-│   Amazon S3     │
-│                 │
-│ Model Artifact  │
-└────────┬────────┘
-         │
-         │ download
-         ▼
-┌─────────────────┐
-│   Application   │
-│                 │
-│    Inference    │
-└─────────────────┘
-```
-
----
-
-## Security Considerations
-
-AWS credentials must never be stored directly in source code or committed to Git.
-
-Avoid committing:
-
-```text
-AWS Access Key IDs
-AWS Secret Access Keys
-Private keys
-.env files
-Local AWS credentials
-```
-
-For AWS-hosted workloads, IAM roles are preferable to embedding credentials in the application.
-
-S3 permissions should also follow the principle of least privilege.
-
----
 
 ## What This Project Demonstrates
 
 This project provides a compact example of:
 
 * MNIST image classification
-* TensorFlow/Keras model training
-* Model artifact management
-* Amazon S3 integration
-* AWS CLI usage
-* IAM permissions
-* EC2 GPU preparation
-* Local/cloud ML workflows
-* Separation of training and inference
-
----
+* Convolutional neural networks
+* PyTorch model training
+* GPU acceleration with CUDA
+* Model serialization with PyTorch
+* AWS/SageMaker-oriented ML workflows
+* Separating training logic from the project entry point
 
 ## Possible Extensions
 
-Potential improvements include:
+Possible future improvements include:
 
-* [ ] FastAPI inference service
-* [ ] Dockerized inference
-* [ ] Automated model deployment
-* [ ] Model versioning
-* [ ] ML experiment tracking
-* [ ] Automated evaluation
-* [ ] CI/CD
-* [ ] Infrastructure as Code
-* [ ] AWS Lambda inference
-* [ ] AWS SageMaker deployment
-* [ ] CloudWatch monitoring
-* [ ] Automated retraining
-* [ ] S3 versioning
-
----
+* [ ] Add a dedicated inference script
+* [ ] Add model evaluation on a test dataset
+* [ ] Report accuracy and loss metrics
+* [ ] Add model inference examples
+* [ ] Add automated model upload to S3
+* [ ] Add Docker support
+* [ ] Add AWS SageMaker deployment configuration
+* [ ] Add experiment tracking
+* [ ] Add CI/CD for training and testing
 
 ## Project Status
 
-The current core workflow is:
+The repository currently focuses on the **MNIST training workflow and model generation**.
+
+The core workflow is:
 
 ```text
-Training → S3 → Model Download → Classification
+MNIST
+  │
+  ▼
+PyTorch CNN
+  │
+  ▼
+Training
+  │
+  ▼
+model.pth
 ```
-
-The project is intended as a compact demonstration of integrating a machine learning model with AWS services while keeping local development possible.
-
----
 
 ## License
 
