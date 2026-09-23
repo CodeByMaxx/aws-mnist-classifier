@@ -1,335 +1,216 @@
 # AWS MNIST Classifier
 
-A small **PyTorch** project for training a convolutional neural network (CNN) on the **MNIST handwritten digit dataset**.
+A PyTorch-based MNIST image classification project designed to run locally and in an AWS SageMaker-style training environment.
 
-The repository contains a local training script as well as a training script following the directory conventions commonly used by managed ML environments such as Amazon SageMaker.
+The project focuses on training a neural network to classify handwritten digits from the **MNIST dataset**, with support for CUDA when a GPU is available.
 
-> **Project status:** This is a learning and experimentation project. It currently focuses on model training and does not provide a web application or production inference service.
+## ✨ Features
 
----
+* MNIST digit classification with PyTorch
+* GPU acceleration through CUDA when available
+* CPU fallback for local development
+* SageMaker-compatible training paths
+* Automatic MNIST dataset download
+* Configurable number of training epochs
+* Model artifact export as `model.pth`
+* Separate training entry points for local/SageMaker workflows
 
-## Overview
+## 🛠️ Technology Stack
 
-The model classifies grayscale handwritten digits from `0` to `9`.
+* **Python**
+* **PyTorch**
+* **Torchvision**
+* **MNIST**
+* **CUDA** when available
+* **AWS SageMaker** training conventions
 
-The implementation uses:
+## 🧠 Machine Learning Workflow
 
-* PyTorch
-* torchvision
-* MNIST
-* a custom convolutional neural network
-* Cross-Entropy loss
-* Adam optimization
-* CPU or CUDA acceleration when available
-
-The trained model is saved as a PyTorch `state_dict`.
-
----
-
-## Model Architecture
-
-The CNN consists of two convolutional blocks followed by fully connected layers:
+The basic workflow is:
 
 ```text
-MNIST Image
-28 × 28 × 1
+MNIST Dataset
      │
      ▼
-Conv2d
-1 → 16 channels
+Data Loading
      │
      ▼
-ReLU
+PyTorch Model
      │
      ▼
-MaxPool2d
+Training
      │
      ▼
-Conv2d
-16 → 32 channels
+Model Evaluation
      │
      ▼
-ReLU
-     │
-     ▼
-MaxPool2d
-     │
-     ▼
-Flatten
-     │
-     ▼
-Linear
-32 × 7 × 7 → 128
-     │
-     ▼
-ReLU
-     │
-     ▼
-Linear
-128 → 10
-     │
-     ▼
-Digit 0–9
+model.pth
 ```
 
-The final layer produces **10 output values**, one for each MNIST class.
-
----
-
-## Tech Stack
-
-| Component     | Technology           |
-| ------------- | -------------------- |
-| Language      | Python               |
-| Deep Learning | PyTorch              |
-| Dataset       | MNIST                |
-| Data Loading  | torchvision          |
-| Optimization  | Adam                 |
-| Loss Function | Cross-Entropy Loss   |
-| Hardware      | CPU / CUDA           |
-| Model Format  | PyTorch `state_dict` |
-
----
-
-## Project Structure
+## 📂 Project Structure
 
 ```text
 aws-mnist-classifier/
-│
 ├── training/
 │   └── train.py
-│
-├── README.MD
 ├── start_training.py
-└── upload_data.py
+├── upload_data.py
+└── README.md
 ```
 
-### Training scripts
+The repository currently contains the training implementation and AWS-oriented training scripts. Additional application or inference components are not assumed to be part of the current project.
 
-`start_training.py`
+## 🚀 Training
 
-Local training script using:
-
-```text
-/tmp/mnist
-```
-
-as the MNIST dataset directory.
-
-`training/train.py`
-
-Training script using the directory convention:
-
-```text
-/opt/ml/input/data/train
-```
-
-and saving the model to:
-
-```text
-/opt/ml/model/model.pth
-```
-
-This layout is suitable for experimentation with managed ML environments, but the repository does **not** currently contain a complete SageMaker deployment configuration.
-
----
-
-## Installation
-
-Create a virtual environment:
-
-```bash
-python3 -m venv .venv
-```
-
-Activate it on Linux/macOS:
-
-```bash
-source .venv/bin/activate
-```
-
-Install PyTorch and torchvision according to your local CPU/CUDA environment.
-
-For example, install the appropriate packages from the official PyTorch installation instructions.
-
----
-
-## Local Training
-
-The simplest training entry point is:
+The main training script can be started with:
 
 ```bash
 python start_training.py
 ```
 
-The script:
-
-1. selects CUDA when available
-2. falls back to CPU otherwise
-3. downloads MNIST through `torchvision` if necessary
-4. creates the CNN
-5. trains the model
-6. saves the model state
-
-The default number of epochs is:
-
-```text
-5
-```
-
-It can be changed using:
+The number of epochs can be configured through the command-line interface:
 
 ```bash
 python start_training.py --epochs 10
 ```
 
----
+The training code automatically uses CUDA when it is available and otherwise falls back to CPU execution.
 
-## Training Configuration
+## 🖥️ Local Training
 
-The current training setup uses:
+For local development, PyTorch selects the available compute device.
 
-| Parameter     |             Value |
-| ------------- | ----------------: |
-| Epochs        |               `5` |
-| Batch size    |              `64` |
-| Learning rate |           `0.001` |
-| Optimizer     |              Adam |
-| Loss          |     Cross-Entropy |
-| Input         | 28 × 28 grayscale |
-| Classes       |                10 |
-
-CUDA is automatically selected when available:
+Conceptually:
 
 ```python
-torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device(
+    "cuda" if torch.cuda.is_available() else "cpu"
+)
 ```
 
----
+This allows the same training code to run on a machine with an NVIDIA GPU as well as on a CPU-only development environment.
 
-## Model Output
+## ☁️ AWS / SageMaker
 
-The model is saved as:
+The `training/train.py` implementation follows the directory conventions commonly used by Amazon SageMaker training jobs.
+
+Training data is expected in the SageMaker input directory:
+
+```text
+/opt/ml/input/data/train
+```
+
+The trained model is written to:
 
 ```text
 /opt/ml/model/model.pth
 ```
 
-The saved file contains the model's PyTorch `state_dict`.
+This structure allows the training script to be adapted for execution inside a SageMaker training container.
 
-The model can later be restored by creating the same CNN architecture and loading the saved state dictionary.
+## 💾 Model Output
 
----
-
-## Managed ML / SageMaker-Oriented Training
-
-The repository contains:
+After training, the model is saved as:
 
 ```text
-training/train.py
+model.pth
 ```
 
-which follows the common directory conventions:
+In the SageMaker-oriented workflow, the model artifact is written below:
 
 ```text
-/opt/ml/input/data/train
-/opt/ml/model
+/opt/ml/model/model.pth
 ```
 
-This makes the script suitable as a starting point for integration with a managed training environment.
+The model artifact can subsequently be used as the input for an inference workflow.
 
-However, the repository currently does **not** contain:
+## 📊 Results
 
-* a SageMaker training job definition
-* an estimator configuration
-* an AWS infrastructure definition
-* an inference endpoint
-* a deployment script
-* an S3 upload implementation
+The current repository focuses on the training implementation.
 
-The project should therefore be considered a **training prototype**, rather than a complete AWS ML deployment.
+No separate committed result visualization is assumed here. When evaluation screenshots, accuracy plots, confusion matrices, or prediction examples are added to the repository, they should be displayed in this section so that the README shows the actual ML result.
 
----
-
-## Dataset
-
-MNIST is downloaded through `torchvision.datasets.MNIST`.
-
-The dataset contains grayscale images of handwritten digits:
+For example:
 
 ```text
-0 1 2 3 4 5 6 7 8 9
+Training
+   │
+   ▼
+Evaluation
+   │
+   ├── Accuracy
+   ├── Loss
+   └── Example Predictions
 ```
 
-Each image has a resolution of:
+## 🔧 Configuration
+
+The training workflow supports configuring the number of epochs:
+
+```bash
+python start_training.py --epochs 10
+```
+
+The training environment determines whether CPU or CUDA execution is used.
+
+## 📦 Dependencies
+
+The current repository does not contain a root-level `requirements.txt`.
+
+The project therefore relies on the Python environment providing the required PyTorch and Torchvision dependencies.
+
+For a reproducible setup, a future improvement would be to add a dependency definition such as:
 
 ```text
-28 × 28 pixels
+requirements.txt
 ```
 
-The dataset is not stored in the Git repository.
+or preferably:
+
+```text
+pyproject.toml
+```
+
+with pinned or constrained versions.
+
+## 🧪 Development Notes
+
+The repository currently contains two training-oriented entry points:
+
+* `start_training.py`
+* `training/train.py`
+
+`start_training.py` provides the convenient top-level training entry point, while `training/train.py` follows the directory conventions expected by a SageMaker-style training environment.
+
+Keeping these responsibilities clearly separated is useful when the project is executed both locally and in AWS.
+
+## 🔮 Possible Improvements
+
+Potential next steps include:
+
+* Add a dedicated evaluation script
+* Report test accuracy and loss
+* Add a confusion matrix
+* Add example predictions
+* Add an inference script
+* Add reproducible dependency management
+* Add automated tests
+* Add an AWS SageMaker training configuration
+* Upload datasets through a dedicated S3 workflow
+* Add a deployment/inference endpoint
+
+## 🎯 Project Purpose
+
+This project demonstrates the basic workflow of taking a classical computer-vision dataset, training a PyTorch model, producing a model artifact, and structuring the training code so that it can be adapted to an AWS SageMaker environment.
+
+The focus is on the **ML training workflow and AWS-oriented structure**, rather than on providing a complete production inference service.
+
+## 📄 License
+
+No license file is assumed here unless one is present in the repository. If the project is intended for reuse, an explicit license can be added.
 
 ---
 
-## Current Limitations
-
-The current project is intentionally small.
-
-Known limitations include:
-
-* no dedicated inference script
-* no test/validation reporting in the training scripts
-* no accuracy metric output
-* no confusion matrix
-* no model evaluation script
-* no requirements file
-* no automated tests
-* no production inference service
-* no complete SageMaker deployment configuration
-* `upload_data.py` does not currently provide an implemented upload workflow
-
-The local training script also writes its model to `/opt/ml/model/model.pth`, so this path may need adjustment when running it outside a managed environment.
-
----
-
-## Possible Improvements
-
-Future improvements could include:
-
-* add a `requirements.txt`
-* add a dedicated evaluation script
-* calculate test accuracy
-* add precision, recall and F1 metrics
-* add a confusion matrix
-* save training metrics
-* create a reusable model module
-* add an inference script
-* add Docker support
-* add proper SageMaker training configuration
-* add S3 dataset/model management
-* add automated tests
-* add CI/CD
-
----
-
-## Security
-
-No AWS credentials should be stored in the repository.
-
-Use standard AWS credential mechanisms such as:
-
-* AWS CLI profiles
-* environment variables
-* IAM roles
-* instance profiles
-
-Never commit access keys or secret keys to source control.
-
----
-
-## Author
-
-**Markus**
-
-Machine Learning / Cloud Engineering Project.
+**Project:** AWS MNIST Classifier
+**Author:** Markus
 
